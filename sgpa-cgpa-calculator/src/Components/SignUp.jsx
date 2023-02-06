@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import {createUserWithEmailAndPassword,updateProfile} from "firebase/auth"
-import { auth } from '../firebase';
-import { async } from '@firebase/util';
+import { auth,db } from '../firebase';
+import { ref, set } from "firebase/database";
+
 const SignUp = () => {
   const navigate = useNavigate();
   const [Pname,setPname] = useState("");
@@ -11,27 +12,24 @@ const SignUp = () => {
 
   const submit =(e)=>{
     e.preventDefault();
-    if(!Pname || !email || !password){
-      alert("Please enter all the fields");
+    function onRegister() {
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          set(ref(db, "users/" + userCredential.user.uid), {
+            Pname: Pname,
+            email: email,
+          });
+        })
+        .catch((error) => console.log(error));
+      navigate("/");
     }
-    else{
-      console.log(Pname,email,password);
-      createUserWithEmailAndPassword(auth,email,password).then(async(res)=> {
-        console.log(res);
-        const user = res.user;
-       await updateProfile(user,{
-          displayName: Pname,
-        });
-        navigate('/')
-      })
-      .catch((err) => console.log(err));
-    }
+    onRegister();
   }
   return (
     <div>
       <div className="flex flex-col items-center min-h-screen pt-6 sm:justify-center sm:pt-0 bg-gray-50">
         <div>
-          <a href="/">
+          <a to="/">
             <h3 className="text-4xl font-bold text-purple-600">
               Logo
             </h3>
@@ -99,7 +97,7 @@ const SignUp = () => {
             <div className="flex items-center justify-end mt-4">
               <a
                 className="text-sm text-gray-600 underline hover:text-gray-900"
-                href="#"
+                to="#"
               >
                 Already registered?
               </a>
